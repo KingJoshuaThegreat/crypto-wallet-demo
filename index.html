@@ -1,1 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Demo Wallet</title>
+<style>
+* { box-sizing: border-box; }
+:root {
+  --bg-page: #f0f2f5; --bg-card: #ffffff; --text-primary: #111827;
+  --text-secondary: #6B7280; --primary-color: #6366F1; --primary-hover: #4F46E5;
+  --row-bg: #f7f5fa; --stat-bg: #f3f4f6;
+}
+body.dark-mode {
+  --bg-page: #111827; --bg-card: #1F2937; --text-primary: #F9FAFB;
+  --text-secondary: #9CA3AF; --primary-color: #818CF8; --primary-hover: #6366F1;
+  --row-bg: #374151; --stat-bg: #111827;
+}
+body {
+  background-color: var(--bg-page); font-family: 'Segoe UI', Arial, sans-serif;
+  display: flex; justify-content: center; margin: 0; padding: 0 0 40px;
+  transition: background-color 0.3s;
+}
+.app { width: 100%; max-width: 420px; }
 
+.header-banner {
+  background-color: var(--primary-color);
+  padding: 20px 20px 40px;
+  border-radius: 0 0 24px 24px;
+  color: white;
+}
+.top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.wallet-title-row { display: flex; align-items: center; gap: 8px; }
+.test-badge {
+  background: rgba(255,255,255,0.2);
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+#themeToggle {
+  background: rgba(255,255,255,0.15); border: none; color: white;
+  padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;
+}
+.balance-label { font-size: 13px; opacity: 0.8; margin: 0; }
+.balance-amount { font-size: 32px; font-weight: bold; margin: 4px 0 0; letter-spacing: -0.5px; }
+
+.card-wrap {
+  background-color: var(--bg-card);
+  border-radius: 16px;
+  padding: 20px;
+  margin: -25px 15px 0;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  transition: background-color 0.3s;
+}
+
+.actions-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 22px; }
+.action-btn {
+  background-color: var(--stat-bg); border: none; border-radius: 12px;
+  padding: 14px 4px; cursor: pointer; color: var(--text-primary); font-size: 12px;
+  transition: background-color 0.15s;
+}
+.action-btn:active { background-color: var(--row-bg); }
+.action-btn .icon {
+  font-size: 16px; display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 50%; background: var(--primary-color);
+  color: white; margin: 0 auto 6px;
+}
+
+.section-label {
+  font-size: 11px; color: var(--text-secondary); font-weight: bold;
+  margin: 0 0 10px; text-transform: uppercase; letter-spacing: 0.8px;
+}
+
+.asset-row {
+  display: flex; align-items: center; gap: 12px;
+  background-color: var(--row-bg); border-radius: 12px; padding: 14px; margin-bottom: 8px;
+}
+.asset-icon {
+  font-size: 20px; width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  background-color: var(--bg-card);
+}
+.asset-info { flex: 1; }
+.asset-name { font-size: 14px; margin: 0; color: var(--text-primary); font-weight: 500; }
+.asset-amount { font-size: 12px; margin: 2px 0 0; color: var(--text-secondary); }
+.asset-value { text-align: right; }
+.asset-usd { font-size: 14px; margin: 0; color: var(--text-primary); font-weight: 500; }
+.asset-price { font-size: 12px; margin: 2px 0 0; color: var(--text-secondary); }
+
+.activity-row {
+  display: flex; align-items: center; gap: 12px; padding: 10px 0;
+  border-bottom: 1px solid var(--stat-bg);
+}
+.activity-row:last-child { border-bottom: none; }
+.activity-icon {
+  width: 32px; height: 32px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;
+}
+.activity-icon.receive { background-color: #D1FAE5; color: #065F46; }
+.activity-icon.send { background-color: #FEE2E2; color: #991B1B; }
+.activity-info { flex: 1; }
+.activity-title { font-size: 13px; margin: 0; color: var(--text-primary); font-weight: 500; }
+.activity-time { font-size: 11px; margin: 2px 0 0; color: var(--text-secondary); }
+.activity-amount { font-size: 13px; font-weight: 500; }
+.activity-amount.positive { color: #10B981; }
+.activity-amount.negative { color: #DC2626; }
+.empty-msg { color: var(--text-secondary); font-size: 13px; padding: 15px 0; text-align: center; }
+
+.modal-overlay {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5); justify-content: center; align-items: center; padding: 20px; z-index: 10;
+}
+.modal-overlay.active { display: flex; }
+.modal-box { background-color: var(--bg-card); border-radius: 16px; padding: 22px; width: 100%; max-width: 340px; text-align: left; }
+.modal-box h2 { color: var(--text-primary); font-size: 18px; margin: 0 0 16px; }
+.modal-box label { font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 4px; }
+.modal-box input, .modal-box select {
+  width: 100%; padding: 11px; font-size: 15px; border: 1px solid var(--stat-bg);
+  border-radius: 10px; background-color: var(--bg-page); color: var(--text-primary); margin-bottom: 14px;
+}
+.modal-error { color: #DC2626; font-size: 13px; margin: -10px 0 12px; display: none; }
+.modal-buttons { display: flex; gap: 10px; }
+.modal-buttons button { flex: 1; padding: 11px; font-size: 15px; border: none; border-radius: 10px; cursor: pointer; }
+#cancelBtn { background-color: var(--stat-bg); color: var(--text-primary); }
+#confirmBtn { background-color: var(--primary-color); color: white; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header-banner">
+    <div class="top-row">
+      <div class="wallet-title-row">
+        <span style="font-size:15px; font-weight:500;">Demo wallet</span>
+        <span class="test-badge">TEST</span>
+      </div>
+      <button id="themeToggle" onclick="toggleTheme()">🌙</button>
+    </div>
+    <p class="balance-label">Total balance</p>
+    <p class="balance-amount" id="totalBalance">$0.00</p>
+  </div>
+
+  <div class="card-wrap">
+    <div class="actions-row">
+      <button class="action-btn" onclick="openActionModal('send')"><span class="icon">↑</span>Send</button>
+      <button class="action-btn" onclick="openActionModal('receive')"><span class="icon">↓</span>Receive</button>
+      <button class="action-btn" onclick="openActionModal('swap')"><span class="icon">⇄</span>Swap</button>
+      <button class="action-btn" onclick="openActionModal('buy')"><span class="icon">+</span>Buy</button>
+    </div>
+
+    <p class="section-label">Your assets</p>
+    <div id="assetsList"></div>
+
+    <p class="section-label" style="margin-top:22px;">Recent activity</p>
+    <div id="activityList"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <h2 id="modalTitle">Send</h2>
+    <label>Asset</label>
+    <select id="assetInput">
+      <option value="bitcoin">Bitcoin (BTC)</option>
+      <option value="ethereum">Ethereum (ETH)</option>
+    </select>
+    <label id="amountLabel">Amount</label>
+    <input type="number" id="amountInput" placeholder="0.00" step="any">
+    <p class="modal-error" id="errorMsg">Enter a valid amount.</p>
+    <div class="modal-buttons">
+      <button id="cancelBtn" onclick="closeModal()">Cancel</button>
+      <button id="confirmBtn" onclick="confirmAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let holdings = JSON.parse(localStorage.getItem("holdings")) || {
+  bitcoin: 0.182,
+  ethereum: 1.94
+};
+let activity = JSON.parse(localStorage.getItem("activity")) || [];
+let prices = { bitcoin: { usd: 0 }, ethereum: { usd: 0 } };
+let currentAction = null;
+
+const names = { bitcoin: "Bitcoin", ethereum: "Ethereum" };
+const symbols = { bitcoin: "BTC", ethereum: "ETH" };
+const icons = { bitcoin: "₿", ethereum: "Ξ" };
+
+function saveData() {
+  localStorage.setItem("holdings", JSON.stringify(holdings));
+  localStorage.setItem("activity", JSON.stringify(activity));
+}
+
+function fetchPrices() {
+  fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd")
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(data) {
+      prices = data;
+      renderAll();
+    })
+    .catch(function() {
+      document.getElementById("totalBalance").innerHTML = "Price unavailable";
+    });
+}
+
+function renderAll() {
+  let total = 0;
+  let list = document.getElementById("assetsList");
+  list.innerHTML = "";
+
+  for (let coin in holdings) {
+    let amount = holdings[coin];
+    let price = prices[coin].usd;
+    let value = amount * price;
+    total += value;
+
+    let row = document.createElement("div");
+    row.className = "asset-row";
+    row.innerHTML = `
+      <span class="asset-icon">${icons[coin]}</span>
+      <div class="asset-info">
+        <p class="asset-name">${names[coin]}</p>
+        <p class="asset-amount">${amount.toFixed(4)} ${symbols[coin]}</p>
+      </div>
+      <div class="asset-value">
+        <p class="asset-usd">$${value.toFixed(2)}</p>
+        <p class="asset-price">$${price.toLocaleString()}</p>
+      </div>
+    `;
+    list.appendChild(row);
+  }
+
+  document.getElementById("totalBalance").innerHTML = "$" + total.toFixed(2);
+
+  let activityList = document.getElementById("activityList");
+  activityList.innerHTML = "";
+  if (activity.length === 0) {
+    activityList.innerHTML = '<p class="empty-msg">No activity yet</p>';
+  } else {
+    for (let i = activity.length - 1; i >= 0; i--) {
+      let entry = activity[i];
+      let row = document.createElement("div");
+      row.className = "activity-row";
+      let isPositive = entry.amount > 0;
+      row.innerHTML = `
+        <div class="activity-icon ${isPositive ? 'receive' : 'send'}">${isPositive ? '↓' : '↑'}</div>
+        <div class="activity-info">
+          <p class="activity-title">${entry.label}</p>
+          <p class="activity-time">${entry.date}</p>
+        </div>
+        <span class="activity-amount ${isPositive ? 'positive' : 'negative'}">
+          ${isPositive ? '+' : ''}${entry.amount.toFixed(4)} ${symbols[entry.coin]}
+        </span>
+      `;
+      activityList.appendChild(row);
+    }
+  }
+}
+
+function openActionModal(action) {
+  currentAction = action;
+  document.getElementById("errorMsg").style.display = "none";
+  document.getElementById("amountInput").value = "";
+
+  let titles = { send: "Send", receive: "Receive", swap: "Swap", buy: "Buy" };
+  document.getElementById("modalTitle").innerHTML = titles[action];
+  document.getElementById("amountLabel").innerHTML = action === "buy" ? "Amount (USD)" : "Amount";
+
+  document.getElementById("modalOverlay").classList.add("active");
+}
+
+function closeModal() {
+  document.getElementById("modalOverlay").classList.remove("active");
+}
+
+function confirmAction() {
+  let coin = document.getElementById("assetInput").value;
+  let amount = parseFloat(document.getElementById("amountInput").value);
+  let errorMsg = document.getElementById("errorMsg");
+
+  if (isNaN(amount) || amount <= 0) {
+    errorMsg.innerHTML = "Enter a valid amount.";
+    errorMsg.style.display = "block";
+    return;
+  }
+
+  let now = new Date();
+  let dateStr = now.toLocaleDateString() + ", " + now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+  if (currentAction === "send") {
+    if (amount > holdings[coin]) {
+      errorMsg.innerHTML = "Insufficient balance.";
+      errorMsg.style.display = "block";
+      return;
+    }
+    holdings[coin] -= amount;
+    activity.push({ coin: coin, amount: -amount, label: "Sent " + symbols[coin], date: dateStr });
+  }
+
+  if (currentAction === "receive") {
+    holdings[coin] += amount;
+    activity.push({ coin: coin, amount: amount, label: "Received " + symbols[coin], date: dateStr });
+  }
+
+  if (currentAction === "buy") {
+    let coinAmount = amount / prices[coin].usd;
+    holdings[coin] += coinAmount;
+    activity.push({ coin: coin, amount: coinAmount, label: "Bought " + symbols[coin] + " ($" + amount.toFixed(2) + ")", date: dateStr });
+  }
+
+  if (currentAction === "swap") {
+    let otherCoin = coin === "bitcoin" ? "ethereum" : "bitcoin";
+    if (amount > holdings[coin]) {
+      errorMsg.innerHTML = "Insufficient balance.";
+      errorMsg.style.display = "block";
+      return;
+    }
+    let usdValue = amount * prices[coin].usd;
+    let otherAmount = usdValue / prices[otherCoin].usd;
+    holdings[coin] -= amount;
+    holdings[otherCoin] += otherAmount;
+    activity.push({ coin: coin, amount: -amount, label: "Swapped to " + symbols[otherCoin], date: dateStr });
+  }
+
+  saveData();
+  renderAll();
+  closeModal();
+}
+
+function toggleTheme() {
+  document.body.classList.toggle("dark-mode");
+  localStorage.setItem("darkMode", document.body.classList.contains("dark-mode"));
+}
+if (localStorage.getItem("darkMode") === "true") {
+  document.body.classList.add("dark-mode");
+}
+
+fetchPrices();
+setInterval(fetchPrices, 30000);
+</script>
+</body>
+  </html>
